@@ -93,7 +93,7 @@ import { encodeStacksPayURL, CommonParameters } from "stacks-pay";
 const customParams: CommonParameters = {
   operation: "custom-action",
   contractName: "SP2RTE7F21N6GQ6BBZR7JGGRWAT0T5Q3Z9ZHB9KRS",
-  funcionName: "public-dao-function",
+  functionName: "public-dao-function",
   memo: "Memo for special action",
   data: "Custom action parameters",
 };
