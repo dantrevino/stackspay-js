@@ -93,7 +93,7 @@ import { encodeStacksPayURL, CommonParameters } from "stacks-pay";
 const customParams: CommonParameters = {
   operation: "custom-action",
   contractName: "SP2RTE7F21N6GQ6BBZR7JGGRWAT0T5Q3Z9ZHB9KRS",
-  funcionName: "public-dao-function",
+  functionName: "public-dao-function",
   memo: "Memo for special action",
   data: "Custom action parameters",
 };
@@ -164,6 +164,104 @@ console.log("Decoded Custom Operation Parameters:", decodedParams);
 //  "memo": "Custom memo for special action",
 //  "data": "Some custom data related to the action"
 //}
+```
+
+## Wallet Integration Examples
+
+This section demonstrates how wallet developers can handle decoded payment requests from Stacks Pay URLs.
+
+### Basic Wallet Flow
+
+```typescript
+import { decodeStacksPayURL } from "stacks-pay";
+
+// 1. User scans QR code or clicks a Stacks Pay link
+const paymentURL = "web+stx:stx1wajky2mnw3u8qcte8ghj76twwehkjcm98ahhqetjv96xjmmw845kuan0d93k2fnjv43kjurfv4h8g02n2qe9y4z9xarryv2wxer4zdjzgfd9yd62gar4y46p2sc9gd23xddrjkjgggu5k5jnye6x76m9dc74x4zcyesk6mm4de6r6vfsxqczver9wd3hy6tsw35k7m3a2pshjmt9de6zken0wg4hxetjwe5kxetnyejhsurfwfjhxst585erqv3595cnytfnx92ryve9xdqn2wf9xdqn2w26juk65n";
+
+// 2. Decode the URL
+try {
+  const paymentRequest = decodeStacksPayURL(paymentURL);
+  
+  // 3. Display payment details to user
+  console.log("Operation:", paymentRequest.operation);
+  console.log("Recipient:", paymentRequest.recipient);
+  console.log("Amount:", paymentRequest.amount);
+  console.log("Token:", paymentRequest.token);
+  console.log("Description:", paymentRequest.description);
+  
+  // 4. Handle based on operation type
+  switch (paymentRequest.operation) {
+    case "invoice":
+      // Show invoice payment UI with amount locked
+      await showInvoicePaymentUI(paymentRequest);
+      break;
+    case "support":
+      // Show support/donation UI (amount editable by user)
+      await showSupportUI(paymentRequest);
+      break;
+    case "mint":
+      // Show NFT minting UI
+      await showMintUI(paymentRequest);
+      break;
+    default:
+      // Handle custom operations
+      await showCustomOperationUI(paymentRequest);
+  }
+} catch (error) {
+  console.error("Invalid payment URL:", error.message);
+  showErrorToUser("Unable to process this payment request");
+}
+```
+
+### Handling Expiration
+
+Check if a payment request has expired before processing:
+
+```typescript
+function isPaymentExpired(paymentRequest: CommonParameters): boolean {
+  if (!paymentRequest.expiresAt) return false;
+  
+  const expirationDate = new Date(paymentRequest.expiresAt);
+  return new Date() > expirationDate;
+}
+
+// Usage
+if (isPaymentExpired(paymentRequest)) {
+  showErrorToUser("This payment request has expired");
+  return;
+}
+```
+
+### Validation Best Practices
+
+Always validate payment parameters before executing transactions:
+
+```typescript
+import { validateStacksAddress } from "@stacks/transactions";
+
+function validatePaymentRequest(request: CommonParameters): boolean {
+  // Validate recipient address
+  if (request.recipient && !validateStacksAddress(request.recipient)) {
+    throw new Error("Invalid recipient address");
+  }
+  
+  // Validate amount for numeric operations
+  if (request.amount) {
+    const amount = parseInt(request.amount);
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error("Invalid amount");
+    }
+  }
+  
+  // Validate contract address for mint operations
+  if (request.operation === "mint" && request.contractAddress) {
+    if (!validateStacksAddress(request.contractAddress)) {
+      throw new Error("Invalid contract address");
+    }
+  }
+  
+  return true;
+}
 ```
 
 ## API Reference
